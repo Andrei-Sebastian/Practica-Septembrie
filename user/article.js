@@ -202,9 +202,12 @@ exports.delete = async (req, res) => {
 
     var arrayId = await common.findAllToArray(Section, { article: idArticle });
     if (arrayId.length != 0)
-        common.removeFromTable(Section, { _id: arrayId });
+        arrayId.map(async idd => {
+            await common.removeFromTable(Section, { _id: idd });
+        })
 
-    common.removeFromTable(Article, { _id: idArticle });
+
+    await common.removeFromTable(Article, { _id: idArticle });
 
     return res.status(200).send({ message: "All good" });
 

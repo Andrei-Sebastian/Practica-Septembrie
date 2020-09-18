@@ -201,7 +201,9 @@ exports.delete = async (req, res) => {
     }
 
     var arrayId = await common.findAllToArray(Section, { article: idArticle });
-    Promise.all( common.removeFromTable(Section, { _id: {$in: arrayId} }), common.removeFromTable(Article, { _id: idArticle }));
+    let respons= await Promise.all( [common.removeFromTable(Section, { _id: {$in: arrayId} }), common.removeFromTable(Article, { _id: idArticle })]);
+    if(respons[0].result.ok==0||respons[1].result.ok==0)
+        return res.status(400).send({ message: "Something wrong" });
 
     return res.status(200).send({ message: "All good" });
 

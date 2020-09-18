@@ -1,3 +1,5 @@
+const { query } = require('express');
+
 var common = {},
     mongo = require('mongoskin'),
     config = require('../config'),
@@ -48,7 +50,7 @@ module.exports.findOneExist = (table, query) => {
     return new Promise((resolve, reject) => {
         table.findOne(query, (err, data) => {
             if (err || !data)
-                resolve({ message: "Something wrong", status: false,object:data });
+                resolve({ message: "Something wrong", status: false, object: data });
             else
                 resolve({ message: "All good", status: true, object: data })
         });
@@ -61,5 +63,33 @@ module.exports.mongodbAggregatePromise = (table, queries) => {
         common.db.collection(table).aggregate(queries, (error, result) => {
             if (error) { reject(error); } else { resolve(result); }
         });
+    });
+}
+
+//return findAll respons
+module.exports.findAllToArray = (table, query) => {
+    return new Promise((resolve, reject) => {
+        table.find(query).toArray((err, result) => {
+            if (err)
+                resolve({ message: err });
+            let arrayId = [];
+            result.map(id => {
+                arrayId.push(id._id);
+            })
+            resolve(arrayId);
+        });
+    })
+}
+
+//return if in a table exists....
+module.exports.removeFromTable = (table, query) => {
+    return new Promise((resolve, reject) => {
+        table.remove(query, (err, data) => {
+            if (err)
+                resolve({ message: err });
+            if (data.result.n == 0)
+                resolve({ message: "Not Found" });
+           resolve(data);
+        })
     });
 }

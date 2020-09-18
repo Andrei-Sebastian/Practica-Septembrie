@@ -1,6 +1,7 @@
 const common = require("../utils/common.js");
 const Article = common.db.collection("articles");
 const User = common.db.collection("users");
+const Section = common.db.collection("sections");
 
 exports.create = async (req, res) => {
     var id = common.getToken(req.headers["x-access-token"]);
@@ -148,4 +149,63 @@ exports.update = async (req, res) => {
             return res.status(400).send({ message: "Something wrong" });
         return res.status(200).send(data);
     });
+}
+
+exports.delete = async (req, res) => {
+    let idArticle = parseInt(req.params._id);
+    let id = common.getToken(req.headers["x-access-token"]);
+
+    if (id.status == "error")
+        return res.status(403).send({ message: "Forbidden" })
+
+    //verify if current user exists
+    let findRespnsUser = await common.findOneExist(User, { _id: id.id });
+    if (findRespnsUser.status == false)
+        return res.status(400).send({ message: "Current user does not exists" })
+
+    //verify if current user was activated
+    if (findRespnsUser.object.active == false)
+        return res.status(404).send({ message: "User is not activated." });
+
+    //???verify if article exists
+    let findRespnsArticle = await common.findOneExist(Article, { _id: parseInt(req.params._id) });
+    if (findRespnsArticle.status == false)
+        return res.status(400).send({ message: "Article does not exists" })
+
+    switch (findRespnsUser.object.role) {
+        //admin
+        case 1:
+            {
+                break;
+            }
+        //leader
+        case 2:
+            {
+                //verify if current user belong to this department
+                if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
+                    return res.status(400).send({ message: "You do not belong to this department" })
+                break;
+            }
+        //developer
+        case 3:
+            {
+                //verify if the article was created by current user
+                if (findRespnsUser.object._id != findRespnsArticle.object.author)
+                    return res.status(400).send({ message: "You are not the author of this article" })
+                break;
+            }
+        default:
+            {
+                return res.status(400).send({ message: "This role does not exists" });
+            }
+    }
+
+    var arrayId = await common.findAllToArray(Section, { article: idArticle });
+    if (arrayId.length != 0)
+        common.removeFromTable(Section, { _id: arrayId });
+
+    common.removeFromTable(Article, { _id: idArticle });
+
+    return res.status(200).send({ message: "All good" });
+
 }

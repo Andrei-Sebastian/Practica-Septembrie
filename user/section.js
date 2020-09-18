@@ -47,13 +47,25 @@ exports.create = async (req, res) => {
     if (findRespnsArticle.status == false)
         return res.status(400).send({ message: "Article does not exists" })
 
-    //verify if current user is the author for this article
-    if (findRespnsUser.object._id != findRespnsArticle.object.author)
-        return res.status(400).send({ message: "You are not the author" })
-
-    //verify if current user belong to this department
-    if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
-        return res.status(400).send({ message: "You do not belong to this department" })
+    //ROLE VALIDATIONS
+    let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
+    let accesRole = findRole.object.acces;
+    if (accesRole.admin == true) {
+        continue;
+    }
+    else if (accesRole.createSectionDepartment == true) {
+        //verify if current user belong to this department
+        if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
+            return res.status(400).send({ message: "You do not belong to this department" })
+    }
+    else if (accesRole.createSectiononOwnArticles == true) {
+        //verify if current user is the author for this article
+        if (findRespnsUser.object._id != findRespnsArticle.object.author)
+            return res.status(400).send({ message: "You are not the author" })
+    }
+    else{
+        return res.status(400).send({ message: "You do not have access to create a section" })
+    }
 
     Section.insert(section, (err, data) => {
         if (err)
@@ -101,34 +113,26 @@ exports.update = async (req, res) => {
     if (findRespnsArticle.status == false)
         return res.status(400).send({ message: "Article does not exists" })
 
-    switch (findRespnsUser.object.role) {
-        //admin
-        case 1:
-            {
-                break;
-            }
-        //leader
-        case 2:
-            {
-                //verify if current user belong to this department
-                if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
-                    return res.status(400).send({ message: "You do not belong to this department" })
-                break;
-            }
-        //developer
-        case 3:
-            {
-                //verify if the article was created by current user
-                if (findRespnsUser.object._id != findRespnsArticle.object.author)
-                    return res.status(400).send({ message: "You are not the author of this article" })
-                break;
-            }
-        default:
-            {
-                return res.status(400).send({ message: "This role does not exists" });
-            }
-    }
+    //ROLE VALIDATIONS
+    let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
+    let accesRole = findRole.object.acces;
 
+    if (accesRole.admin == true) {
+        continue;
+    }
+    else if (accesRole.editArticleOnDepartment == true) {
+        //verify if current user belong to this department
+        if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
+            return res.status(400).send({ message: "You do not belong to this department" })
+    }
+    else if (accesRole.editArticleOnOwnArticles == true) {
+        //verify if the article was created by current user
+        if (findRespnsUser.object._id != findRespnsArticle.object.author)
+            return res.status(400).send({ message: "You are not the author of this article" })
+    }
+    else {
+        return res.status(400).send({ message: "You do not have access to edit a section" });
+    }
 
     Section.update({ _id: parseInt(req.params._id), article: section.article }, section, (err, data) => {
         if (err)

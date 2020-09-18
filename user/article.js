@@ -2,6 +2,8 @@ const common = require("../utils/common.js");
 const Article = common.db.collection("articles");
 const User = common.db.collection("users");
 const Section = common.db.collection("sections");
+const Role = common.db.collection("roles");
+
 
 exports.create = async (req, res) => {
     var id = common.getToken(req.headers["x-access-token"]);
@@ -38,6 +40,15 @@ exports.create = async (req, res) => {
     let findResponsUserD = (await common.findOneExist(User, { department: article.tags.department }))
     if (findResponsUserD.status == false) {
         return res.status(400).send({ message: "Department does not exist" })
+    }
+
+    let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
+    let accesRole = findRole.object.acces;
+    if (
+        accesRole.admin == false ||
+        accesRole.createArticleOnDepartment == false
+    ) {
+        return res.status(400).send({ message: "You do not have access to create an article" });
     }
 
     if (article.title != null && article.title.length < 3) {
@@ -85,7 +96,7 @@ exports.update = async (req, res) => {
         author: id.id,
         title: req.body.title,
         tags: {
-            department: findRespnsUser.object.department,
+            department: req.body.department||findRespnsUser.object.department,
             programming_language: req.body.programming_language,
             framework: req.body.framework
         }
@@ -96,37 +107,28 @@ exports.update = async (req, res) => {
     if (findRespnsArticle.status == false)
         return res.status(400).send({ message: "Article does not exists" })
 
-    switch (findRespnsUser.object.role) {
-        //admin
-        case 1:
-            {
-                //verify if department exists
-                let findResponsUserD = (await common.findOneExist(User, { department: article.tags.department }))
-                if (findResponsUserD.status == false) {
-                    return res.status(400).send({ message: "Department does not exist" })
-                }
-                break;
-            }
-        //leader
-        case 2:
-            {
-                //verify if current user belong to this department
-                if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
-                    return res.status(400).send({ message: "You do not belong to this department" })
-                break;
-            }
-        //developer
-        case 3:
-            {
-                //verify if the article was created by current user
-                if (findRespnsUser.object._id != findRespnsArticle.object.author)
-                    return res.status(400).send({ message: "You are not the author of this article" })
-                break;
-            }
-        default:
-            {
-                return res.status(400).send({ message: "This role does not exists" });
-            }
+    let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
+    let accesRole = findRole.object.acces;
+
+    if (accesRole.admin == true) {
+        //verify if department exists
+        let findResponsUserD = (await common.findOneExist(User, { department: article.tags.department }))
+        if (findResponsUserD.status == false) {
+            return res.status(400).send({ message: "Department does not exist" })
+        }
+    }
+    else if (accesRole.editArticleOnDepartment == true) {
+        //verify if current user belong to this department
+        if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
+            return res.status(400).send({ message: "You do not belong to this department" })
+    }
+    else if (accesRole.editArticleOnOwnArticles == true) {
+        //verify if the article was created by current user
+        if (findRespnsUser.object._id != findRespnsArticle.object.author)
+            return res.status(400).send({ message: "You are not the author of this article" })
+    }
+    else {
+        return res.status(400).send({ message: "You do not have access to edit an article" });
     }
 
     if (article.title != null && article.title.length < 3) {
@@ -172,37 +174,29 @@ exports.delete = async (req, res) => {
     if (findRespnsArticle.status == false)
         return res.status(400).send({ message: "Article does not exists" })
 
-    switch (findRespnsUser.object.role) {
-        //admin
-        case 1:
-            {
-                break;
-            }
-        //leader
-        case 2:
-            {
-                //verify if current user belong to this department
-                if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
-                    return res.status(400).send({ message: "You do not belong to this department" })
-                break;
-            }
-        //developer
-        case 3:
-            {
-                //verify if the article was created by current user
-                if (findRespnsUser.object._id != findRespnsArticle.object.author)
-                    return res.status(400).send({ message: "You are not the author of this article" })
-                break;
-            }
-        default:
-            {
-                return res.status(400).send({ message: "This role does not exists" });
-            }
+    let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
+    let accesRole = findRole.object.acces;
+
+    if (accesRole.admin == true) {
+       continue;
+    }
+    else if (accesRole.deleteArticleOnDepartment == true) {
+        //verify if current user belong to this department
+        if (findRespnsUser.object.department != findRespnsArticle.object.tags.department)
+            return res.status(400).send({ message: "You do not belong to this department" })
+    }
+    else if (accesRole.deleteArticleOnOwnArticles == true) {
+        //verify if the article was created by current user
+        if (findRespnsUser.object._id != findRespnsArticle.object.author)
+            return res.status(400).send({ message: "You are not the author of this article" })
+    }
+    else {
+        return res.status(400).send({ message: "You do not have access to delete an article" });
     }
 
     var arrayId = await common.findAllToArray(Section, { article: idArticle });
-    let respons= await Promise.all( [common.removeFromTable(Section, { _id: {$in: arrayId} }), common.removeFromTable(Article, { _id: idArticle })]);
-    if(respons[0].result.ok==0||respons[1].result.ok==0)
+    let respons = await Promise.all([common.removeFromTable(Section, { _id: { $in: arrayId } }), common.removeFromTable(Article, { _id: idArticle })]);
+    if (respons[0].result.ok == 0 || respons[1].result.ok == 0)
         return res.status(400).send({ message: "Something wrong" });
 
     return res.status(200).send({ message: "All good" });

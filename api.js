@@ -9,6 +9,7 @@ const users = require('./user/users')
 const auth = require('./user/auth');
 const article = require('./user/article');
 const section = require('./user/section');
+const role = require('./user/role');
 const common = require('./utils/common');
 app.use( (req, res, next)=> {
     res.header(
@@ -42,6 +43,11 @@ app.post('/article/delete/:_id',article.delete);
 
 app.post('/section/create',section.create);
 app.post('/section/update/:_id',section.update);
+
+
+//=========== ROLE API ===============================================
+
+app.post('/role/create',role.create);
 
 
 

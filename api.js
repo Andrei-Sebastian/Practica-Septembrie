@@ -36,6 +36,8 @@ app.get('/login',auth.login)
 app.post('/article/create',article.create);
 app.post('/article/update/:_id',article.update);
 app.post('/article/delete/:_id',article.delete);
+app.get('/article/one/:_id',article.getOneArticle);
+app.get('/article/all',article.getAllArticlesFromDepartment);
 
 
 

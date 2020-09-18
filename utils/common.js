@@ -67,7 +67,7 @@ module.exports.mongodbAggregatePromise = (table, queries) => {
 }
 
 //return findAll respons
-module.exports.findAllToArray = (table, query) => {
+module.exports.findAllIDToArray = (table, query) => {
     return new Promise((resolve, reject) => {
         table.find(query).toArray((err, result) => {
             if (err)
@@ -77,6 +77,21 @@ module.exports.findAllToArray = (table, query) => {
                 arrayId.push(id._id);
             })
             resolve(arrayId);
+        });
+    })
+}
+
+//return findAll respons
+module.exports.findAllToArray = (table, query) => {
+    return new Promise((resolve, reject) => {
+        table.find(query).toArray((err, result) => {
+            if (err)
+                resolve({ message: err });
+            let arrayData = [];
+            result.map(data => {
+                arrayData.push(data);
+            })
+            resolve(arrayData);
         });
     })
 }

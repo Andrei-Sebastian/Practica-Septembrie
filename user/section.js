@@ -2,6 +2,7 @@ const common = require("../utils/common.js");
 const Section = common.db.collection("sections");
 const Article = common.db.collection("articles");
 const User = common.db.collection("users");
+const Role = common.db.collection("roles");
 
 
 exports.create = async (req, res) => {
@@ -51,7 +52,7 @@ exports.create = async (req, res) => {
     let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
     let accesRole = findRole.object.acces;
     if (accesRole.admin == true) {
-        continue;
+        //continue
     }
     else if (accesRole.createSectionDepartment == true) {
         //verify if current user belong to this department
@@ -118,7 +119,7 @@ exports.update = async (req, res) => {
     let accesRole = findRole.object.acces;
 
     if (accesRole.admin == true) {
-        continue;
+       // continue
     }
     else if (accesRole.editArticleOnDepartment == true) {
         //verify if current user belong to this department

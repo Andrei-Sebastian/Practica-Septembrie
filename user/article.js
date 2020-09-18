@@ -178,7 +178,7 @@ exports.delete = async (req, res) => {
     let accesRole = findRole.object.acces;
 
     if (accesRole.admin == true) {
-       continue;
+      // continue
     }
     else if (accesRole.deleteArticleOnDepartment == true) {
         //verify if current user belong to this department

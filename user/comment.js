@@ -3,6 +3,8 @@ const Comment = common.db.collection("comments");
 const Article = common.db.collection("articles");
 const User = common.db.collection("users");
 const Role = common.db.collection("roles");
+const Vote = common.db.collection("votes");
+
 
 exports.create = async (req, res) => {
     let id = common.getToken(req.headers["x-access-token"]);
@@ -108,10 +110,16 @@ exports.delete = async (req, res) => {
         id.id == findRespnsComment.author)) {
         return res.status(403).send({ message: "You do not have access to delete this comment." });
     }
-    let respons = await common.removeFromTable(Comment, { _id: comment_id });
-    if (respons.message == "Not Found")
-        return res.status(400).send({ message: "Not Found" });
-    return res.status(200).send({ message: respons });
+    let array=[common.removeFromTable(Comment, { _id: comment_id })];
+    var arrayVoteId = await common.findAllIDToArray(Vote, { comment: comment_id });
+    if(Array.isArray(arrayVoteId)&&arrayVoteId.length>0)
+    array.push(common.removeFromTable(Vote, { _id: { $in: arrayVoteId } }))
+    let respons = await Promise.all(array);
+    for (i = 0; i < array.length; i++) {
+        if (respons[i].result.ok == 0)
+            return res.status(400).send({ message: "Something wrong" });
+    }
+    return res.status(200).send({ message: "Comment was deleted" });
 
 }
 

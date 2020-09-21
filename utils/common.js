@@ -70,9 +70,10 @@ module.exports.mongodbAggregatePromise = (table, queries) => {
 module.exports.findAllIDToArray = (table, query) => {
     return new Promise((resolve, reject) => {
         table.find(query).toArray((err, result) => {
+            let arrayId = [];
             if (err)
                 resolve({ message: err });
-            let arrayId = [];
+            
             result.map(id => {
                 arrayId.push(id._id);
             })

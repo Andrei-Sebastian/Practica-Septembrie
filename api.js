@@ -11,6 +11,7 @@ const article = require('./user/article');
 const section = require('./user/section');
 const role = require('./user/role');
 const comment=require('./user/comment');
+const vote=require('./user/vote');
 const common = require('./utils/common');
 app.use( (req, res, next)=> {
     res.header(
@@ -58,6 +59,10 @@ app.post('/role/create',role.create);
 app.post('/comment/create/:_id',comment.create);
 app.post('/comment/update/:_id',comment.update);
 app.post('/comment/delete/:_id',comment.delete);
+
+
+//=========== VOTE API ===============================================
+app.post('/vote/:_id',vote.vote);
 
 
 

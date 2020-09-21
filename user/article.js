@@ -3,7 +3,8 @@ const Article = common.db.collection("articles");
 const User = common.db.collection("users");
 const Section = common.db.collection("sections");
 const Role = common.db.collection("roles");
-const Comment=common.db.collection("comments");
+const Comment = common.db.collection("comments");
+const Vote = common.db.collection("votes");
 
 
 exports.create = async (req, res) => {
@@ -46,7 +47,7 @@ exports.create = async (req, res) => {
     let findRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role }));
     let accesRole = findRole.object.acces;
 
-    if (accesRole.createArticleOnDepartment == false ) {
+    if (accesRole.createArticleOnDepartment == false) {
         return res.status(400).send({ message: "You do not have access to create an article" });
     }
 
@@ -192,32 +193,56 @@ exports.delete = async (req, res) => {
     else {
         return res.status(400).send({ message: "You do not have access to delete an article" });
     }
+    let array = [common.removeFromTable(Article, { _id: idArticle })];
+    var arraySectionId = await common.findAllIDToArray(Section, { article: idArticle });
+    var arrayCommentId = await common.findAllIDToArray(Comment, { article: idArticle });
+    var arrayVoteId = await common.findAllIDToArray(Vote, { comment: { $in: arrayCommentId } });
+    if (Array.isArray(arraySectionId) && arraySectionId.length > 0)
+        array.push(common.removeFromTable(Section, { _id: { $in: arraySectionId } }));
+    if (Array.isArray(arrayCommentId) && arrayCommentId.length > 0)
+        array.push(common.removeFromTable(Comment, { _id: { $in: arrayCommentId } }));
+    if (Array.isArray(arrayVoteId) && arrayVoteId.length > 0)
+        array.push(common.removeFromTable(Vote, { _id: { $in: arrayVoteId } }));
+    let respons = await Promise.all(array);
 
-    var arrayId = await common.findAllIDToArray(Section, { article: idArticle });
-    let respons = await Promise.all([common.removeFromTable(Section, { _id: { $in: arrayId } }), common.removeFromTable(Article, { _id: idArticle }),common.removeFromTable(Comment, { article: idArticle })]);
-    if (respons[0].result.ok == 0 || respons[1].result.ok == 0)
-        return res.status(400).send({ message: "Something wrong" });
-
+    for (i = 0; i < array.length; i++) {
+        if (respons[i].result.ok == 0)
+            return res.status(400).send({ message: "Something wrong" });
+    }
     return res.status(200).send({ message: "Article was deleted" });
 }
-
 //get details about one article
 exports.getOneArticle = async (req, res) => {
     article_id = parseInt(req.params._id);
     articleResult = await common.findOneExist(Article, { _id: article_id });
+    let comments = [];
     if (articleResult.status == false)
         res.status(400).send("Article does not exist");
     sectionsArray = await common.findAllToArray(Section, { article: article_id });
     commentsArray = await common.findAllToArray(Comment, { article: article_id });
+    if (commentsArray.length != 0)
+        for (i = 0; i < commentsArray.length; i++) {
+            approvesArray = await common.findAllToArray(Vote, { comment: commentsArray[i]._id, approve: true });
+            disapprovesArray = await common.findAllToArray(Vote, { comment: commentsArray[i]._id, approve: false });
+            let arrayComments = {
+                _id: commentsArray[i]._id,
+                author: commentsArray[i].author,
+                article: commentsArray[i].article,
+                text: commentsArray[i].text,
+                approves: approvesArray.length,
+                disapproves: disapprovesArray.length
+            }
+            comments.push(arrayComments)
+        }
     const result = {
-        _id:articleResult.object._id,
+        _id: articleResult.object._id,
         title: articleResult.object.title,
         author: articleResult.object.author,
         department: articleResult.object.tags.department,
         programming_language: articleResult.object.tags.programming_language,
         framework: articleResult.object.tags.framework,
         sections: sectionsArray,
-        comments:commentsArray
+        comments: comments
     }
     res.status(200).send(result);
 
@@ -226,23 +251,22 @@ exports.getOneArticle = async (req, res) => {
 //get details about articles belongs to a departent
 exports.getAllArticlesFromDepartment = async (req, res) => {
     let department = req.body.department;
-    let respons=[];
-    articleResult = await common.findAllToArray(Article,  { 'tags.department': department  } );
-    if (articleResult.length==0)
+    let respons = [];
+    articleResult = await common.findAllToArray(Article, { 'tags.department': department });
+    if (articleResult.length == 0)
         res.status(400).send("In this department does not exists articles");
-    for(i=0;i<articleResult.length;i++)
-    {
-    sectionsArray = await common.findAllToArray(Section, { article: articleResult[i]._id });
-    let arrayArticles = {
-        _id:articleResult[i]._id,
-        title: articleResult[i].title,
-        author: articleResult[i].author,
-        department: articleResult[i].tags.department,
-        programming_language: articleResult[i].tags.programming_language,
-        framework: articleResult[i].tags.framework,
-        sections: sectionsArray
-    }
-    respons.push(arrayArticles)
+    for (i = 0; i < articleResult.length; i++) {
+        sectionsArray = await common.findAllToArray(Section, { article: articleResult[i]._id });
+        let arrayArticles = {
+            _id: articleResult[i]._id,
+            title: articleResult[i].title,
+            author: articleResult[i].author,
+            department: articleResult[i].tags.department,
+            programming_language: articleResult[i].tags.programming_language,
+            framework: articleResult[i].tags.framework,
+            sections: sectionsArray
+        }
+        respons.push(arrayArticles)
     }
     res.status(200).send(respons);
 

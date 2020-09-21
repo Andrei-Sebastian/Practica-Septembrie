@@ -5,11 +5,12 @@ const bodyParser = require("body-parser");
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-const users = require('./user/users')
+const users = require('./user/users');
 const auth = require('./user/auth');
 const article = require('./user/article');
 const section = require('./user/section');
 const role = require('./user/role');
+const comment=require('./user/comment');
 const common = require('./utils/common');
 app.use( (req, res, next)=> {
     res.header(
@@ -53,12 +54,11 @@ app.post('/role/create',role.create);
 
 
 
-//=========== TEST API ===============================================
-app.get('/test',(req,res,next)=>{
-    res.send(req.headers["x-access-token"]);
-  //  console.log("am ajuns");
-   // next();
-})
+//=========== COMMENT API ===============================================
+app.post('/comment/create/:_id',comment.create);
+app.post('/comment/update/:_id',comment.update);
+app.post('/comment/delete/:_id',comment.delete);
+
 
 
 app.listen(config.web.port, config.web.host, function () {

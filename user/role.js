@@ -47,6 +47,7 @@ exports.create = async (req, res) => {
             deleteArticleOnOwnAticles: req.body.deleteArticleOnOwnAticles || false,
             deleteSectionDepartment: req.body.deleteSectionDepartment || false,
             deleteSectionOnOwnArticles: req.body.deleteSectionOnOwnArticles || false,
+            deleteCommentsOnOwnDepartment: req.body.deleteCommentsOnOwnDepartment || false
         }
     }
 

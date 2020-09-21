@@ -3,6 +3,7 @@ const Article = common.db.collection("articles");
 const User = common.db.collection("users");
 const Section = common.db.collection("sections");
 const Role = common.db.collection("roles");
+const Comment=common.db.collection("comments");
 
 
 exports.create = async (req, res) => {
@@ -193,11 +194,11 @@ exports.delete = async (req, res) => {
     }
 
     var arrayId = await common.findAllIDToArray(Section, { article: idArticle });
-    let respons = await Promise.all([common.removeFromTable(Section, { _id: { $in: arrayId } }), common.removeFromTable(Article, { _id: idArticle })]);
+    let respons = await Promise.all([common.removeFromTable(Section, { _id: { $in: arrayId } }), common.removeFromTable(Article, { _id: idArticle }),common.removeFromTable(Comment, { article: idArticle })]);
     if (respons[0].result.ok == 0 || respons[1].result.ok == 0)
         return res.status(400).send({ message: "Something wrong" });
 
-    return res.status(200).send({ message: "All good" });
+    return res.status(200).send({ message: "Article was deleted" });
 }
 
 //get details about one article
@@ -207,6 +208,7 @@ exports.getOneArticle = async (req, res) => {
     if (articleResult.status == false)
         res.status(400).send("Article does not exist");
     sectionsArray = await common.findAllToArray(Section, { article: article_id });
+    commentsArray = await common.findAllToArray(Comment, { article: article_id });
     const result = {
         _id:articleResult.object._id,
         title: articleResult.object.title,
@@ -214,7 +216,8 @@ exports.getOneArticle = async (req, res) => {
         department: articleResult.object.tags.department,
         programming_language: articleResult.object.tags.programming_language,
         framework: articleResult.object.tags.framework,
-        sections: sectionsArray
+        sections: sectionsArray,
+        comments:commentsArray
     }
     res.status(200).send(result);
 

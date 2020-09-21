@@ -12,6 +12,7 @@ const section = require('./user/section');
 const role = require('./user/role');
 const comment=require('./user/comment');
 const vote=require('./user/vote');
+const department=require('./user/department');
 const common = require('./utils/common');
 app.use( (req, res, next)=> {
     res.header(
@@ -64,6 +65,9 @@ app.post('/comment/delete/:_id',comment.delete);
 //=========== VOTE API ===============================================
 app.post('/vote/:_id',vote.vote);
 
+
+//=========== DEPARTMENT API ===============================================
+app.post('/department/create',department.create);
 
 
 app.listen(config.web.port, config.web.host, function () {

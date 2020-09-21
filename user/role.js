@@ -16,8 +16,8 @@ exports.create = async (req, res) => {
     if (findRespnsUser.object.active == false)
         return res.status(404).send({ message: "User is not activated." });
 
+    //verify if current user is admin
     let accesRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role })).object.acces;
-
     if (accesRole.admin == false)
         return res.status(403).send({ message: "You do not have access to create a role." });
 

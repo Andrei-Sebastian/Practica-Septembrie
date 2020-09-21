@@ -97,11 +97,10 @@ exports.delete = async (req, res) => {
     if (findRespnsUser.object.active == false)
         return res.status(404).send({ message: "User is not activated." });
 
-    //verify if article exists
-    let findRespnsComment = (await common.findOneExist(Comment, { _id: comment_id })).object
-    let findRespnsArticle = await common.findOneExist(Article, { _id: findRespnsComment.article });
-    if (findRespnsArticle.status == false)
-        return res.status(400).send({ message: "Article does not exists" })
+    //verify if comment exists
+    let findRespnsComment = (await common.findOneExist(Comment, { _id: comment_id }))
+    if (findRespnsComment.status == false)
+        return res.status(400).send({ message: "Comment does not exists" })
 
     //verify if current user have acces to delete a comment
     let accesRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role })).object.acces;

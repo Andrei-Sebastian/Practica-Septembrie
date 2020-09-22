@@ -1,7 +1,7 @@
 const common = require("../utils/common.js");
 const User = common.db.collection("users");
 const Role = common.db.collection("roles");
-const regexEmail = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
+const Department = common.db.collection("departments");
 const bcrypt = require("bcryptjs");
 
 exports.create = async (req, res) => {
@@ -32,7 +32,7 @@ exports.create = async (req, res) => {
     if (confirm_password != password) {
         return res.status(406).send({ message: "Password not acceptable." });
     }
-    if (!regexEmail.test(email)) {
+    if (!common.regexEmail.test(email)) {
         return res.status(400).send({ message: "Invalid email" });
     }
     if ((await common.findOneExist(Role, { _id: role })).status==false) {
@@ -46,6 +46,11 @@ exports.create = async (req, res) => {
     let findRespnsUser = await common.findOneExist(User, { email: email });
     if (findRespnsUser.status == true)
         return res.status(400).send({ message: "Email already exists" })
+
+    //check if the department exists
+    let findRespnsDepartment = await common.findOneExist(Department, { _id: department });
+    if (findRespnsDepartment.status == false)
+        return res.status(400).send({ message: "Department does not exists" })
     
     const user = {
         _id: ((await common.mongodbAggregatePromise("users", [{

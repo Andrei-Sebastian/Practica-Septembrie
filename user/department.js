@@ -47,3 +47,35 @@ exports.create = async (req, res) => {
     })
 
 }
+exports.delete = async (req, res) => {
+    var id = common.getToken(req.headers["x-access-token"]);
+    var departmentId = parseInt(req.params._id);
+    if (id.status == "error")
+        return res.status(403).send({ message: "Forbidden" })
+
+    //verify if current user exists
+    let findRespnsUser = await common.findOneExist(User, { _id: id.id });
+    if (findRespnsUser.status == false)
+        return res.status(400).send({ message: "Current user does not exists" })
+
+    //verify if current user was activated
+    if (findRespnsUser.object.active == false)
+        return res.status(404).send({ message: "User is not activated." });
+
+    //verify if current user is admin
+    let accesRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role })).object.acces;
+    if (accesRole.admin == false)
+        return res.status(403).send({ message: "You do not have access to create a role." });
+
+    if ((await common.findOneExist(User, { department: departmentId })).status == true) {
+        return res.status(400).send({ message: "This department is already used." });
+    }
+
+    let respons = await common.removeFromTable(Department, { _id: departmentId });
+    if (respons.status == -1)
+        return res.status(400).send({ message: "Something wrong" });
+    else if (respons.status == 0)
+        return res.status(400).send({ message: "Department does not exists." });
+    return res.status(200).send({ message: "Comment was deleted" });
+
+}

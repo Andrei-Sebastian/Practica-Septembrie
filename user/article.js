@@ -206,7 +206,7 @@ exports.delete = async (req, res) => {
     let respons = await Promise.all(array);
 
     for (i = 0; i < array.length; i++) {
-        if (respons[i].result.ok == 0)
+        if (respons[i].status == -1)
             return res.status(400).send({ message: "Something wrong" });
     }
     return res.status(200).send({ message: "Article was deleted" });

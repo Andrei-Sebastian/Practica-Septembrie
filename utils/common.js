@@ -15,17 +15,18 @@ module.exports = common;
 
 module.exports.secretkey = "secret";
 
-module.exports.verifyToken = (token, id) => {
-    return jsonwebtoken.verify(token, common.secretkey, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({
-                message: "Unauthorized!"
-            });
-        }
-        return decoded._id == id;
-    })
+// module.exports.verifyToken = (token, id) => {
+//     return jsonwebtoken.verify(token, common.secretkey, (err, decoded) => {
+//         if (err) {
+//             return res.status(401).send({
+//                 message: "Unauthorized!"
+//             });
+//         }
+//         return decoded._id == id;
+//     })
 
-}
+// }
+module.exports.regexEmail = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
 
 
 //decode token and get user id
@@ -73,7 +74,7 @@ module.exports.findAllIDToArray = (table, query) => {
             let arrayId = [];
             if (err)
                 resolve({ message: err });
-            
+
             result.map(id => {
                 arrayId.push(id._id);
             })
@@ -86,9 +87,9 @@ module.exports.findAllIDToArray = (table, query) => {
 module.exports.findAllToArray = (table, query) => {
     return new Promise((resolve, reject) => {
         table.find(query).toArray((err, result) => {
+            let arrayData = [];
             if (err)
                 resolve({ message: err });
-            let arrayData = [];
             result.map(data => {
                 arrayData.push(data);
             })
@@ -97,15 +98,15 @@ module.exports.findAllToArray = (table, query) => {
     })
 }
 
-//return if in a table exists....
+//remove data from a table
 module.exports.removeFromTable = (table, query) => {
     return new Promise((resolve, reject) => {
         table.remove(query, (err, data) => {
             if (err)
-                resolve({ message: err });
+                resolve({ status: -1, message: err });
             if (data.result.n == 0)
-                resolve({ message: "Not Found" });
-           resolve(data);
+                resolve({ status: 0, message: "Not deleted" });
+            resolve({ status: 1, message: "Deleted" });
         })
     });
 }

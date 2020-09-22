@@ -102,23 +102,28 @@ exports.delete = async (req, res) => {
     if (findRespnsComment.status == false)
         return res.status(400).send({ message: "Comment does not exists" })
 
-    //verify if current user have acces to delete a comment
+
+    // verify if article exists
+    let findRespnsArticle = await common.findOneExist(Article, { _id: findRespnsComment.article });
+    if (findRespnsArticle.status == false)
+        return res.status(400).send({ message: "Article does not exists" })
+
+    // verify if current user have acces to delete a comment
     let accesRole = (await common.findOneExist(Role, { _id: findRespnsUser.object.role })).object.acces;
     if (!(accesRole.admin == true ||
         (accesRole.deleteCommentsOnOwnDepartment == true && findRespnsUser.object.department == findRespnsArticle.object.tags.department) ||
         id.id == findRespnsComment.author)) {
         return res.status(403).send({ message: "You do not have access to delete this comment." });
     }
-    let array=[common.removeFromTable(Comment, { _id: comment_id })];
+
     var arrayVoteId = await common.findAllIDToArray(Vote, { comment: comment_id });
-    if(Array.isArray(arrayVoteId)&&arrayVoteId.length>0)
-    array.push(common.removeFromTable(Vote, { _id: { $in: arrayVoteId } }))
-    let respons = await Promise.all(array);
-    for (i = 0; i < array.length; i++) {
-        if (respons[i].result.ok == 0)
-            return res.status(400).send({ message: "Something wrong" });
-    }
+    let respons = await Promise.all([common.removeFromTable(Comment, { _id: comment_id }), common.removeFromTable(Vote, { _id: { $in: arrayVoteId } })]);
+    if (respons[0].status == -1)
+        return res.status(400).send({ message: "Something wrong in comment" });
+    if (respons[0].status == -1)
+        return res.status(400).send({ message: "Something wrong in vote" });
     return res.status(200).send({ message: "Comment was deleted" });
+
 
 }
 

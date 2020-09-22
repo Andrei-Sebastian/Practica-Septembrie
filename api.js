@@ -30,8 +30,8 @@ app.post('/user/create', users.create);
 
 //=========== AUTH API ===============================================
 
-// login
 app.get('/login',auth.login)
+app.post('/register',auth.register)
 
 
 //=========== ARTICLE API ===============================================
@@ -43,7 +43,6 @@ app.get('/article/one/:_id',article.getOneArticle);
 app.get('/article/all',article.getAllArticlesFromDepartment);
 
 
-
 //=========== SECTION API ===============================================
 
 app.post('/section/create',section.create);
@@ -53,7 +52,6 @@ app.post('/section/update/:_id',section.update);
 //=========== ROLE API ===============================================
 
 app.post('/role/create',role.create);
-
 
 
 //=========== COMMENT API ===============================================
@@ -68,6 +66,7 @@ app.post('/vote/:_id',vote.vote);
 
 //=========== DEPARTMENT API ===============================================
 app.post('/department/create',department.create);
+app.post('/department/delete/:_id',department.delete);
 
 
 app.listen(config.web.port, config.web.host, function () {
